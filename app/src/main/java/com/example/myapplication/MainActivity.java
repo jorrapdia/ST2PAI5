@@ -1,11 +1,11 @@
 package com.example.myapplication;
 
 import android.app.AlertDialog;
-import android.content.DialogInterface;
 import android.content.res.Resources;
 import android.os.Bundle;
+import android.text.Editable;
 import android.view.View;
-import android.widget.CheckBox;
+import android.widget.EditText;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -26,42 +26,46 @@ public class MainActivity extends AppCompatActivity {
         View button = findViewById(R.id.button_send);
 
         // Llama al listener del boton Enviar
-        button.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                showDialog();
-            }
-        });
+        button.setOnClickListener(view -> showDialog());
 
 
     }
 
     // Creación de un cuadro de dialogo para confirmar pedido
     private void showDialog() throws Resources.NotFoundException {
-        CheckBox sabanas = (CheckBox) findViewById(R.id.checkBox_sabanas);
+        EditText bedsField = (EditText) findViewById(R.id.bedsField);
+        Integer bedsNumber = transformToInteger(bedsField.getText());
 
-        if (!sabanas.isChecked()) {
-            // Mostramos un mensaje emergente;
-            Toast.makeText(getApplicationContext(), "Selecciona al menos un elemento", Toast.LENGTH_SHORT).show();
+        EditText tablesField = (EditText) findViewById(R.id.tablesField);
+        Integer tablesNumber = transformToInteger(tablesField.getText());
+
+        EditText chairsField = (EditText) findViewById(R.id.chairsField);
+        Integer chairsNumber = transformToInteger(chairsField.getText());
+
+        EditText armchairsField = (EditText) findViewById(R.id.armchairsField);
+        Integer armchairsNumber = transformToInteger(armchairsField.getText());
+
+        EditText clientNumberField = (EditText) findViewById(R.id.clientField);
+
+        String error = validateForm(bedsNumber, tablesNumber, chairsNumber, armchairsNumber, clientNumberField.getText().toString());
+        if (error != null) {
+            Toast.makeText(getApplicationContext(), error, Toast.LENGTH_SHORT).show();
         } else {
+            // Catch ok button and send information
             new AlertDialog.Builder(this)
                     .setTitle("Enviar")
                     .setMessage("Se va a proceder al envio")
                     .setIcon(android.R.drawable.ic_dialog_alert)
-                    .setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
+                    .setPositiveButton(android.R.string.yes, (dialog, whichButton) -> {
 
-                                // Catch ok button and send information
-                                public void onClick(DialogInterface dialog, int whichButton) {
+                        // 1. Extraer los datos de la vista
 
-                                    // 1. Extraer los datos de la vista
+                        // 2. Firmar los datos
 
-                                    // 2. Firmar los datos
+                        // 3. Enviar los datos
 
-                                    // 3. Enviar los datos
-
-                                    Toast.makeText(MainActivity.this, "Petición enviada correctamente", Toast.LENGTH_SHORT).show();
-                                }
-                            }
+                        Toast.makeText(MainActivity.this, "Petición enviada correctamente", Toast.LENGTH_SHORT).show();
+                    }
 
                     )
                     .
@@ -72,6 +76,31 @@ public class MainActivity extends AppCompatActivity {
 
                             show();
         }
+    }
+
+    private String validateForm(Integer bedsNumber, Integer tablesNumber, Integer chairsNumber, Integer armchairsNumber, String clientNumber) {
+        String errorMsg = null;
+
+        if (bedsNumber == null || tablesNumber == null || chairsNumber == null || armchairsNumber == null || clientNumber.isEmpty()) {
+            errorMsg = "Tienes que rellenar todos los campos";
+        } else if (bedsNumber < 0 || bedsNumber > 300 ||
+                tablesNumber < 0 || tablesNumber > 300 ||
+                chairsNumber < 0 || chairsNumber > 300 ||
+                armchairsNumber < 0 || armchairsNumber > 300) {
+            errorMsg = "Los campos numéricos deben estar entre 0 y 300";
+        }
+
+        return errorMsg;
+    }
+
+    private Integer transformToInteger(Editable text) {
+        Integer res = null;
+
+        if (text.length() > 0) {
+            res = Integer.valueOf(text.toString());
+        }
+
+        return res;
     }
 
 
