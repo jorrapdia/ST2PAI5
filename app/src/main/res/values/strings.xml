@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">My Application</string>
+    <string name="app_name">ST2 PAI5: Hospital warehouse</string>
     <string name="string_hospital_warehouse_app" />
     <string name="enviar">Enviar</string>
     <string name="beds">Camas</string>
@@ -7,4 +7,5 @@
     <string name="chairs">Sillas</string>
     <string name="armchairs">Sillones</string>
     <string name="clientNumber">Número de cliente</string>
+    <string name="pageTitle">Petición de material</string>
 </resources>

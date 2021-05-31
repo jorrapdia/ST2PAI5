@@ -6,6 +6,42 @@
      tools:context="com.example.myapplication.MainActivity">
 
     <TextView
+        android:id="@+id/textView"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/string_hospital_warehouse_app"
+        tools:text="Hospital Warehouse APP" />
+
+    <Button
+        android:id="@+id/button_send"
+        android:layout_width="140dp"
+        android:layout_height="wrap_content"
+        android:layout_alignParentStart="true"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentEnd="true"
+        android:layout_alignParentRight="true"
+        android:layout_alignParentBottom="true"
+        android:layout_marginStart="136dp"
+        android:layout_marginLeft="136dp"
+        android:layout_marginEnd="135dp"
+        android:layout_marginRight="135dp"
+        android:layout_marginBottom="100dp"
+        android:text="@string/enviar" />
+
+    <EditText
+        android:id="@+id/tablesField"
+        android:layout_width="75dp"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/bedsField"
+        android:layout_alignParentStart="true"
+        android:layout_alignParentLeft="true"
+        android:layout_marginStart="26dp"
+        android:layout_marginLeft="26dp"
+        android:layout_marginTop="32dp"
+        android:ems="10"
+        android:inputType="number" />
+
+    <TextView
         android:id="@+id/textView6"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -19,86 +55,11 @@
         android:textAppearance="@style/TextAppearance.AppCompat.Medium"
         tools:text="@string/armchairs" />
 
-    <TextView
-        android:id="@+id/textView5"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_below="@+id/textView4"
-        android:layout_marginStart="7dp"
-        android:layout_marginLeft="7dp"
-        android:layout_marginTop="55dp"
-        android:layout_toEndOf="@+id/tablesField"
-        android:layout_toRightOf="@+id/tablesField"
-        android:text="@string/chairs"
-        android:textAppearance="@style/TextAppearance.AppCompat.Medium"
-        tools:text="@string/chairs" />
-
-    <TextView
-        android:id="@+id/textView4"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_below="@+id/textView2"
-        android:layout_marginStart="7dp"
-        android:layout_marginLeft="7dp"
-        android:layout_marginTop="57dp"
-        android:layout_toEndOf="@+id/tablesField"
-        android:layout_toRightOf="@+id/tablesField"
-        android:text="@string/tables"
-        android:textAppearance="@style/TextAppearance.AppCompat.Medium"
-        tools:text="@string/tables" />
-
-    <TextView
-        android:id="@+id/textView"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="@string/string_hospital_warehouse_app"
-        tools:text="Hospital Warehouse APP" />
-
-    <Button
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="@string/enviar"
-        android:id="@+id/button_send"
-        android:layout_alignParentBottom="true"
-        android:layout_alignParentRight="true"
-        android:layout_alignParentEnd="true"
-        android:layout_marginRight="35dp"
-        android:layout_marginEnd="35dp"
-        android:layout_marginBottom="35dp" />
-
     <EditText
-        android:id="@+id/bedsField"
-        style="@style/Widget.AppCompat.EditText"
+        android:id="@+id/armchairsField"
         android:layout_width="75dp"
         android:layout_height="wrap_content"
-        android:layout_alignParentStart="true"
-        android:layout_alignParentLeft="true"
-        android:layout_alignParentTop="true"
-        android:layout_marginStart="26dp"
-        android:layout_marginLeft="26dp"
-        android:layout_marginTop="69dp"
-        android:ems="10"
-        android:inputType="number" />
-
-    <TextView
-        android:id="@+id/textView2"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_below="@+id/textView"
-        android:layout_marginStart="7dp"
-        android:layout_marginLeft="7dp"
-        android:layout_marginTop="62dp"
-        android:layout_toEndOf="@+id/bedsField"
-        android:layout_toRightOf="@+id/bedsField"
-        android:text="@string/beds"
-        android:textAppearance="@style/TextAppearance.AppCompat.Medium"
-        tools:text="@string/beds" />
-
-    <EditText
-        android:id="@+id/tablesField"
-        android:layout_width="75dp"
-        android:layout_height="wrap_content"
-        android:layout_below="@+id/bedsField"
+        android:layout_below="@+id/chairsField"
         android:layout_alignParentStart="true"
         android:layout_alignParentLeft="true"
         android:layout_marginStart="26dp"
@@ -120,18 +81,61 @@
         android:ems="10"
         android:inputType="number" />
 
+    <TextView
+        android:id="@+id/textView5"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/textView4"
+        android:layout_marginStart="7dp"
+        android:layout_marginLeft="7dp"
+        android:layout_marginTop="53dp"
+        android:layout_toEndOf="@+id/tablesField"
+        android:layout_toRightOf="@+id/tablesField"
+        android:text="@string/chairs"
+        android:textAppearance="@style/TextAppearance.AppCompat.Medium"
+        tools:text="@string/chairs" />
+
+    <TextView
+        android:id="@+id/textView4"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/textView2"
+        android:layout_marginStart="7dp"
+        android:layout_marginLeft="7dp"
+        android:layout_marginTop="53dp"
+        android:layout_toEndOf="@+id/tablesField"
+        android:layout_toRightOf="@+id/tablesField"
+        android:text="@string/tables"
+        android:textAppearance="@style/TextAppearance.AppCompat.Medium"
+        tools:text="@string/tables" />
+
     <EditText
-        android:id="@+id/armchairsField"
+        android:id="@+id/bedsField"
+        style="@style/Widget.AppCompat.EditText"
         android:layout_width="75dp"
         android:layout_height="wrap_content"
-        android:layout_below="@+id/chairsField"
         android:layout_alignParentStart="true"
         android:layout_alignParentLeft="true"
+        android:layout_alignParentTop="true"
         android:layout_marginStart="26dp"
         android:layout_marginLeft="26dp"
-        android:layout_marginTop="32dp"
+        android:layout_marginTop="90dp"
         android:ems="10"
         android:inputType="number" />
+
+    <TextView
+        android:id="@+id/textView2"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/textView"
+        android:layout_marginStart="7dp"
+        android:layout_marginLeft="7dp"
+        android:layout_marginTop="90dp"
+        android:layout_toEndOf="@+id/bedsField"
+        android:layout_toRightOf="@+id/bedsField"
+        android:text="@string/beds"
+        android:textAppearance="@style/TextAppearance.AppCompat.Medium"
+        tools:text="@string/beds" />
 
     <EditText
         android:id="@+id/clientField"
@@ -140,11 +144,28 @@
         android:layout_below="@+id/armchairsField"
         android:layout_alignParentStart="true"
         android:layout_alignParentLeft="true"
-        android:layout_marginStart="70dp"
-        android:layout_marginLeft="70dp"
-        android:layout_marginTop="75dp"
+        android:layout_alignParentEnd="true"
+        android:layout_alignParentRight="true"
+        android:layout_marginStart="82dp"
+        android:layout_marginLeft="82dp"
+        android:layout_marginTop="49dp"
+        android:layout_marginEnd="83dp"
+        android:layout_marginRight="83dp"
         android:ems="10"
         android:hint="@string/clientNumber"
         android:inputType="textPersonName" />
+
+    <TextView
+        android:id="@+id/textView3"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentStart="true"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentTop="true"
+        android:layout_marginStart="99dp"
+        android:layout_marginLeft="99dp"
+        android:layout_marginTop="30dp"
+        android:text="@string/pageTitle"
+        android:textSize="24sp" />
 
 </RelativeLayout>
