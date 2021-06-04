@@ -10,7 +10,7 @@ public final class DatabaseContract {
     private DatabaseContract() {
     }
 
-    public static class clientEntry implements BaseColumns {
+    public static class ClientEntry implements BaseColumns {
         public static final String TABLE_NAME = "clients";
         public static final String COLUMN_NAME_NAME = "name";
         public static final String COLUMN_NAME_PUBLICKKEY = "public_key";
@@ -18,16 +18,16 @@ public final class DatabaseContract {
     }
 
     private static final String SQL_CREATE_ENTRIES =
-            "CREATE TABLE " + clientEntry.TABLE_NAME + " (" +
-                    clientEntry._ID + " INTEGER PRIMARY KEY," +
-                    clientEntry.COLUMN_NAME_NAME + " TEXT," +
-                    clientEntry.COLUMN_NAME_PUBLICKKEY + " TEXT," +
-                    clientEntry.COLUMN_NAME_PRIVATEKEY + " TEXT)";
+            "CREATE TABLE " + ClientEntry.TABLE_NAME + " (" +
+                    BaseColumns._ID + " INTEGER PRIMARY KEY," +
+                    ClientEntry.COLUMN_NAME_NAME + " TEXT," +
+                    ClientEntry.COLUMN_NAME_PUBLICKKEY + " TEXT," +
+                    ClientEntry.COLUMN_NAME_PRIVATEKEY + " TEXT)";
 
     private static final String SQL_DELETE_ENTRIES =
-            "DROP TABLE IF EXISTS " + clientEntry.TABLE_NAME;
+            "DROP TABLE IF EXISTS " + ClientEntry.TABLE_NAME;
 
-    public class ClientDbHelper extends SQLiteOpenHelper {
+    public static class ClientDbHelper extends SQLiteOpenHelper {
         public static final int DATABASE_VERSION = 1;
         public static final String DATABASE_NAME = "clients.db";
 
