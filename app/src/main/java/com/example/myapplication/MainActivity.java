@@ -95,6 +95,11 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private String sendRequest(String data) throws IOException {
+        System.setProperty("javax.net.ssl.keyStore", "");
+        System.setProperty("javax.net.ssl.keyStorePassword", "");
+        System.setProperty("javax.net.ssl.trustStore", "");
+        System.setProperty("javax.net.ssl.trustStorePassword", "");
+
         SSLSocket socket = null;
         PrintWriter out = null;
         BufferedReader in = null;
