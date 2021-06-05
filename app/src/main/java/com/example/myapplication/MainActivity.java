@@ -2,34 +2,41 @@ package com.example.myapplication;
 
 import android.app.AlertDialog;
 import android.content.ContentValues;
+import android.content.res.AssetManager;
 import android.content.res.Resources;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
+import android.os.StrictMode;
 import android.text.Editable;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.Toast;
 
+import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
+import javax.net.ssl.TrustManagerFactory;
 
 import java.io.*;
 import java.security.InvalidKeyException;
 import java.security.KeyFactory;
+import java.security.KeyManagementException;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
+import java.security.KeyStore;
+import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.Signature;
 import java.security.SignatureException;
+import java.security.UnrecoverableKeyException;
+import java.security.cert.CertificateException;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
 
 import androidx.appcompat.app.AppCompatActivity;
 
@@ -37,8 +44,8 @@ import androidx.appcompat.app.AppCompatActivity;
 public class MainActivity extends AppCompatActivity {
 
     // Setup Server information
-    protected static String server = "127.0.0.1";
-    protected static int port = 8443;
+    protected static String server = "192.168.1.10";
+    protected static int port = 443;
     private static final String[] PROTOCOLS = new String[]{"TLSv1.3"};
     private static final String[] CIPHER_SUITES = new String[]{"TLS_AES_128_GCM_SHA256"};
     private static final char[] HEX_ARRAY = "0123456789ABCDEF".toCharArray();
@@ -47,6 +54,10 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        StrictMode.ThreadPolicy policy = new StrictMode.ThreadPolicy.Builder().permitAll().build();
+        StrictMode.setThreadPolicy(policy);
+
         setContentView(R.layout.activity_main);
 
         // Capturamos el boton de Enviar
@@ -58,19 +69,19 @@ public class MainActivity extends AppCompatActivity {
 
     // Creación de un cuadro de dialogo para confirmar pedido
     private void showDialog() throws Resources.NotFoundException {
-        EditText bedsField = (EditText) findViewById(R.id.bedsField);
+        EditText bedsField = findViewById(R.id.bedsField);
         Integer bedsNumber = transformToInteger(bedsField.getText());
 
-        EditText tablesField = (EditText) findViewById(R.id.tablesField);
+        EditText tablesField = findViewById(R.id.tablesField);
         Integer tablesNumber = transformToInteger(tablesField.getText());
 
-        EditText chairsField = (EditText) findViewById(R.id.chairsField);
+        EditText chairsField = findViewById(R.id.chairsField);
         Integer chairsNumber = transformToInteger(chairsField.getText());
 
-        EditText armchairsField = (EditText) findViewById(R.id.armchairsField);
+        EditText armchairsField = findViewById(R.id.armchairsField);
         Integer armchairsNumber = transformToInteger(armchairsField.getText());
 
-        EditText clientNumberField = (EditText) findViewById(R.id.clientField);
+        EditText clientNumberField = findViewById(R.id.clientField);
 
         String error = validateForm(bedsNumber, tablesNumber, chairsNumber, armchairsNumber, clientNumberField.getText().toString());
         if (error != null) {
@@ -175,76 +186,69 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private String sendRequest(String data) throws IOException {
-        List<String> certPaths = loadCertsInCache();
-        System.setProperty("javax.net.ssl.keyStore", certPaths.get(0));
-        System.setProperty("javax.net.ssl.trustStore", certPaths.get(1));
-        System.setProperty("javax.net.ssl.keyStorePassword", "prueba");
-        System.setProperty("javax.net.ssl.trustStorePassword", "prueba");
+        SSLContext sslContext = null;
+        try {
+            sslContext = loadCertsInCache();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
 
         SSLSocket socket = null;
         PrintWriter out = null;
         BufferedReader in = null;
         String response = "";
 
-        try {
-            SSLSocketFactory factory = (SSLSocketFactory) SSLSocketFactory.getDefault();
-            socket = (SSLSocket) factory.createSocket(server, port);
-            socket.setEnabledProtocols(PROTOCOLS);
-            socket.setEnabledCipherSuites(CIPHER_SUITES);
+        if (sslContext != null) {
+            try {
+                SSLSocketFactory factory = sslContext.getSocketFactory();
+                socket = (SSLSocket) factory.createSocket(server, port);
+                socket.setEnabledProtocols(PROTOCOLS);
+                socket.setEnabledCipherSuites(CIPHER_SUITES);
 
-            socket.startHandshake();
+                socket.startHandshake();
 
-            out = new PrintWriter(new BufferedWriter(new OutputStreamWriter(socket.getOutputStream())));
+                out = new PrintWriter(new BufferedWriter(new OutputStreamWriter(socket.getOutputStream())));
 
-            /* send data */
-            out.write(data);
-            out.flush();
+                /* send data */
+                out.write(data);
+                out.flush();
 
-            if (out.checkError())
-                System.out.println("SSLSocketClient:  java.io.PrintWriter error");
+                if (out.checkError())
+                    System.out.println("SSLSocketClient:  java.io.PrintWriter error");
 
-            /* read response */
-            in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+                /* read response */
+                in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 
-            String inputLine;
-            while ((inputLine = in.readLine()) != null) {
-                response += inputLine;
+                String inputLine;
+                while ((inputLine = in.readLine()) != null) {
+                    response += inputLine;
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            } finally {
+                if (socket != null)
+                    socket.close();
+                if (out != null)
+                    out.close();
+                if (in != null)
+                    in.close();
             }
-        } catch (Exception e) {
-            e.printStackTrace();
-        } finally {
-            if (socket != null)
-                socket.close();
-            if (out != null)
-                out.close();
-            if (in != null)
-                in.close();
         }
         return response;
     }
 
-    private List<String> loadCertsInCache() {
-        List<String> res = new ArrayList<>();
-        List<String> certFilenames = Arrays.asList("client.keystore", "server.keystore");
-        for (String filename : certFilenames) {
-            File f = new File(getCacheDir() + "/" + filename);
-            if (!f.exists()) {
-                try {
-                    InputStream is = getAssets().open(filename);
-                    int size = is.available();
-                    byte[] buffer = new byte[size];
-                    is.read(buffer);
-                    is.close();
-                    FileOutputStream fos = new FileOutputStream(f);
-                    fos.write(buffer);
-                    fos.close();
-                } catch (Exception e) {
-                    throw new RuntimeException(e);
-                }
-            }
-            res.add(f.getPath());
-        }
-        return res;
+    private SSLContext loadCertsInCache() throws KeyStoreException, IOException, CertificateException, NoSuchAlgorithmException, UnrecoverableKeyException, KeyManagementException {
+        KeyStore ks = KeyStore.getInstance("pkcs12");
+        AssetManager am = getApplicationContext().getAssets();
+        InputStream i = am.open("server.p12");
+        ks.load(i, "prueba".toCharArray());
+        KeyManagerFactory kmf = KeyManagerFactory.getInstance("PKIX");
+        kmf.init(ks, "prueba".toCharArray());
+        TrustManagerFactory tmf = TrustManagerFactory.getInstance("PKIX");
+        tmf.init(ks);
+        SSLContext sc = SSLContext.getInstance("TLSv1.3");
+        sc.init(null, tmf.getTrustManagers(), null);
+        return sc;
     }
 
     private Integer transformToInteger(Editable text) {
