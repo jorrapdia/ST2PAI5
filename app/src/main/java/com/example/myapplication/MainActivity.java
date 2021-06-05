@@ -15,7 +15,6 @@ import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
 
 import java.io.*;
-import java.net.URL;
 import java.security.InvalidKeyException;
 import java.security.KeyFactory;
 import java.security.KeyPair;
@@ -28,6 +27,9 @@ import java.security.SignatureException;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 import androidx.appcompat.app.AppCompatActivity;
 
@@ -52,7 +54,6 @@ public class MainActivity extends AppCompatActivity {
 
         // Llama al listener del boton Enviar
         button.setOnClickListener(view -> showDialog());
-
     }
 
     // Creación de un cuadro de dialogo para confirmar pedido
@@ -96,7 +97,6 @@ public class MainActivity extends AppCompatActivity {
                                         null,
                                         null
                                 );
-
                                 String popupMsg;
                                 PublicKey publicKey = null;
                                 PrivateKey privateKey = null;
@@ -114,7 +114,6 @@ public class MainActivity extends AppCompatActivity {
                                     } catch (InvalidKeySpecException | NoSuchAlgorithmException e) {
                                         popupMsg = ERROR_MSG;
                                     }
-
                                     cursor.close();
                                 } else {
                                     cursor.close();
@@ -137,7 +136,6 @@ public class MainActivity extends AppCompatActivity {
                                         popupMsg = ERROR_MSG;
                                     }
                                 }
-
                                 if (publicKey != null && privateKey != null) {
                                     try {
                                         Signature signature = Signature.getInstance("SHA512withRSA");
@@ -152,7 +150,6 @@ public class MainActivity extends AppCompatActivity {
 
                                         String data = msg + ";" + bytesToHex(publicKey.getEncoded()) + ";" + bytesToHex(sign);
                                         popupMsg = sendRequest(data);
-
                                     } catch (NoSuchAlgorithmException | InvalidKeyException | SignatureException | IOException e) {
                                         popupMsg = ERROR_MSG;
                                     }
@@ -177,20 +174,11 @@ public class MainActivity extends AppCompatActivity {
         return errorMsg;
     }
 
-    private Integer transformToInteger(Editable text) {
-        Integer res = null;
-        if (text.length() > 0) {
-            res = Integer.valueOf(text.toString());
-        }
-        return res;
-    }
-
     private String sendRequest(String data) throws IOException {
-        ClassLoader classLoader = getClass().getClassLoader();
-        assert classLoader != null;
-        System.setProperty("javax.net.ssl.keyStore", "app/client.keystore");
+        List<String> certPaths = loadCertsInCache();
+        System.setProperty("javax.net.ssl.keyStore", certPaths.get(0));
+        System.setProperty("javax.net.ssl.trustStore", certPaths.get(1));
         System.setProperty("javax.net.ssl.keyStorePassword", "prueba");
-        System.setProperty("javax.net.ssl.trustStore", "app/server.keystore");
         System.setProperty("javax.net.ssl.trustStorePassword", "prueba");
 
         SSLSocket socket = null;
@@ -201,7 +189,6 @@ public class MainActivity extends AppCompatActivity {
         try {
             SSLSocketFactory factory = (SSLSocketFactory) SSLSocketFactory.getDefault();
             socket = (SSLSocket) factory.createSocket(server, port);
-
             socket.setEnabledProtocols(PROTOCOLS);
             socket.setEnabledCipherSuites(CIPHER_SUITES);
 
@@ -234,6 +221,38 @@ public class MainActivity extends AppCompatActivity {
                 in.close();
         }
         return response;
+    }
+
+    private List<String> loadCertsInCache() {
+        List<String> res = new ArrayList<>();
+        List<String> certFilenames = Arrays.asList("client.keystore", "server.keystore");
+        for (String filename : certFilenames) {
+            File f = new File(getCacheDir() + "/" + filename);
+            if (!f.exists()) {
+                try {
+                    InputStream is = getAssets().open(filename);
+                    int size = is.available();
+                    byte[] buffer = new byte[size];
+                    is.read(buffer);
+                    is.close();
+                    FileOutputStream fos = new FileOutputStream(f);
+                    fos.write(buffer);
+                    fos.close();
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+            }
+            res.add(f.getPath());
+        }
+        return res;
+    }
+
+    private Integer transformToInteger(Editable text) {
+        Integer res = null;
+        if (text.length() > 0) {
+            res = Integer.valueOf(text.toString());
+        }
+        return res;
     }
 
     public static String bytesToHex(byte[] bytes) {
