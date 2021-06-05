@@ -45,7 +45,7 @@ public class MainActivity extends AppCompatActivity {
 
     // Setup Server information
     protected static String server = "192.168.1.10";
-    protected static int port = 443;
+    protected static int port = 8443;
     private static final String[] PROTOCOLS = new String[]{"TLSv1.3"};
     private static final String[] CIPHER_SUITES = new String[]{"TLS_AES_128_GCM_SHA256"};
     private static final char[] HEX_ARRAY = "0123456789ABCDEF".toCharArray();
@@ -108,7 +108,7 @@ public class MainActivity extends AppCompatActivity {
                                         null,
                                         null
                                 );
-                                String popupMsg;
+                                String popupMsg = "";
                                 PublicKey publicKey = null;
                                 PrivateKey privateKey = null;
 
@@ -165,7 +165,7 @@ public class MainActivity extends AppCompatActivity {
                                         popupMsg = ERROR_MSG;
                                     }
                                 }
-                                Toast.makeText(MainActivity.this, "Petición enviada correctamente", Toast.LENGTH_SHORT).show();
+                                Toast.makeText(MainActivity.this, popupMsg, Toast.LENGTH_SHORT).show();
                             }
                     )
                     .setNegativeButton(android.R.string.no, null)
@@ -195,7 +195,6 @@ public class MainActivity extends AppCompatActivity {
 
         SSLSocket socket = null;
         PrintWriter out = null;
-        BufferedReader in = null;
         String response = "";
 
         if (sslContext != null) {
@@ -217,12 +216,16 @@ public class MainActivity extends AppCompatActivity {
                     System.out.println("SSLSocketClient:  java.io.PrintWriter error");
 
                 /* read response */
-                in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 
-                String inputLine;
-                while ((inputLine = in.readLine()) != null) {
-                    response += inputLine;
+                StringBuilder inputLineBuilder = new StringBuilder();
+                int ch;
+                while ((ch = socket.getInputStream().read()) != -1) {
+                    inputLineBuilder.append((char) ch);
+                    if (inputLineBuilder.toString().endsWith("\r\n")) {
+                        break;
+                    }
                 }
+                response = inputLineBuilder.toString();
             } catch (Exception e) {
                 e.printStackTrace();
             } finally {
@@ -230,8 +233,6 @@ public class MainActivity extends AppCompatActivity {
                     socket.close();
                 if (out != null)
                     out.close();
-                if (in != null)
-                    in.close();
             }
         }
         return response;
