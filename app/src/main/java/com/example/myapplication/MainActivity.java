@@ -37,6 +37,8 @@ import java.security.cert.CertificateException;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
+import java.sql.Timestamp;
+import java.text.SimpleDateFormat;
 
 import androidx.appcompat.app.AppCompatActivity;
 
@@ -44,7 +46,7 @@ import androidx.appcompat.app.AppCompatActivity;
 public class MainActivity extends AppCompatActivity {
 
     // Setup Server information
-    protected static String server = "192.168.1.10";
+    protected static String server = "192.168.100.5";
     protected static int port = 8443;
     private static final String[] PROTOCOLS = new String[]{"TLSv1.3"};
     private static final String[] CIPHER_SUITES = new String[]{"TLS_AES_128_GCM_SHA256"};
@@ -59,6 +61,12 @@ public class MainActivity extends AppCompatActivity {
         StrictMode.setThreadPolicy(policy);
 
         setContentView(R.layout.activity_main);
+
+        DatabaseContract.ClientDbHelper dbHelper = new DatabaseContract.ClientDbHelper(getApplicationContext());
+        SQLiteDatabase db = dbHelper.getReadableDatabase();
+        dbHelper.onUpgrade(db, 0, 1);
+        dbHelper.close();
+        db.close();
 
         // Capturamos el boton de Enviar
         View button = findViewById(R.id.button_send);
@@ -93,78 +101,88 @@ public class MainActivity extends AppCompatActivity {
                     .setMessage("Se va a proceder al envío del pedido")
                     .setIcon(android.R.drawable.ic_dialog_info)
                     .setPositiveButton(android.R.string.yes, (dialog, whichButton) -> {
+                                String popupMsg = "";
                                 DatabaseContract.ClientDbHelper dbHelper = new DatabaseContract.ClientDbHelper(getApplicationContext());
                                 SQLiteDatabase db = dbHelper.getReadableDatabase();
 
-                                String selection = DatabaseContract.ClientEntry.COLUMN_NAME_NAME + " = ?";
-                                String[] selectionArgs = {clientNumberField.getText().toString()};
+                                String dateSelectionQry = "SELECT * FROM " + DatabaseContract.ClientEntry.TABLE2_NAME + " WHERE " +
+                                        DatabaseContract.ClientEntry.COLUMN_NAME_DATETIME + " > datetime('now', '-4 hours')";
+                                Cursor dSC = db.rawQuery(dateSelectionQry, null);
+                                int madeRequests = dSC.getCount();
+                                dSC.close();
+                                if (madeRequests < 3) {
+                                    String selection = DatabaseContract.ClientEntry.COLUMN_NAME_NAME + " = ?";
+                                    String[] selectionArgs = {clientNumberField.getText().toString()};
+                                    Cursor cursor = db.query(
+                                            DatabaseContract.ClientEntry.TABLE_NAME,
+                                            null,
+                                            selection,
+                                            selectionArgs,
+                                            null,
+                                            null,
+                                            null
+                                    );
 
-                                Cursor cursor = db.query(
-                                        DatabaseContract.ClientEntry.TABLE_NAME,
-                                        null,
-                                        selection,
-                                        selectionArgs,
-                                        null,
-                                        null,
-                                        null
-                                );
-                                String popupMsg = "";
-                                PublicKey publicKey = null;
-                                PrivateKey privateKey = null;
+                                    PublicKey publicKey = null;
+                                    PrivateKey privateKey = null;
+                                    if (cursor.moveToNext()) {
+                                        byte[] pub = hexStringToByteArray(cursor.getString(cursor.getColumnIndexOrThrow(DatabaseContract.ClientEntry.COLUMN_NAME_PUBLICKKEY)));
+                                        byte[] pvt = hexStringToByteArray(cursor.getString(cursor.getColumnIndexOrThrow(DatabaseContract.ClientEntry.COLUMN_NAME_PRIVATEKEY)));
+                                        X509EncodedKeySpec publicKs = new X509EncodedKeySpec(pub);
+                                        PKCS8EncodedKeySpec privateKs = new PKCS8EncodedKeySpec(pvt);
 
-                                if (cursor.moveToNext()) {
-                                    byte[] pub = hexStringToByteArray(cursor.getString(cursor.getColumnIndexOrThrow(DatabaseContract.ClientEntry.COLUMN_NAME_PUBLICKKEY)));
-                                    byte[] pvt = hexStringToByteArray(cursor.getString(cursor.getColumnIndexOrThrow(DatabaseContract.ClientEntry.COLUMN_NAME_PRIVATEKEY)));
-                                    X509EncodedKeySpec publicKs = new X509EncodedKeySpec(pub);
-                                    PKCS8EncodedKeySpec privateKs = new PKCS8EncodedKeySpec(pvt);
+                                        try {
+                                            KeyFactory kf = KeyFactory.getInstance("RSA");
+                                            publicKey = kf.generatePublic(publicKs);
+                                            privateKey = kf.generatePrivate(privateKs);
+                                        } catch (InvalidKeySpecException | NoSuchAlgorithmException e) {
+                                            popupMsg = ERROR_MSG;
+                                        }
+                                        cursor.close();
+                                    } else {
+                                        cursor.close();
+                                        KeyPairGenerator keygen;
+                                        try {
+                                            keygen = KeyPairGenerator.getInstance("RSA");
+                                            keygen.initialize(4096);
+                                            KeyPair kp = keygen.generateKeyPair();
 
-                                    try {
-                                        KeyFactory kf = KeyFactory.getInstance("RSA");
-                                        publicKey = kf.generatePublic(publicKs);
-                                        privateKey = kf.generatePrivate(privateKs);
-                                    } catch (InvalidKeySpecException | NoSuchAlgorithmException e) {
-                                        popupMsg = ERROR_MSG;
+                                            publicKey = kp.getPublic();
+                                            privateKey = kp.getPrivate();
+
+                                            db = dbHelper.getWritableDatabase();
+                                            ContentValues values = new ContentValues();
+                                            values.put(DatabaseContract.ClientEntry.COLUMN_NAME_NAME, clientNumberField.getText().toString());
+                                            values.put(DatabaseContract.ClientEntry.COLUMN_NAME_PUBLICKKEY, bytesToHex(publicKey.getEncoded()));
+                                            values.put(DatabaseContract.ClientEntry.COLUMN_NAME_PRIVATEKEY, bytesToHex(privateKey.getEncoded()));
+                                            db.insert(DatabaseContract.ClientEntry.TABLE_NAME, null, values);
+                                        } catch (NoSuchAlgorithmException e) {
+                                            popupMsg = ERROR_MSG;
+                                        }
                                     }
-                                    cursor.close();
+                                    if (publicKey != null && privateKey != null) {
+                                        try {
+                                            Signature signature = Signature.getInstance("SHA512withRSA");
+                                            signature.initSign(privateKey);
+                                            String msg = bedsNumber + " " +
+                                                    tablesNumber + " " +
+                                                    chairsNumber + " " +
+                                                    armchairsNumber + " " +
+                                                    clientNumberField.getText().toString();
+                                            signature.update(msg.getBytes());
+                                            byte[] sign = signature.sign();
+
+                                            String data = msg + ";" + bytesToHex(publicKey.getEncoded()) + ";" + bytesToHex(sign);
+                                            popupMsg = sendRequest(data);
+                                        } catch (NoSuchAlgorithmException | InvalidKeyException | SignatureException | IOException e) {
+                                            popupMsg = ERROR_MSG;
+                                        }
+                                    }
                                 } else {
-                                    cursor.close();
-                                    KeyPairGenerator keygen;
-                                    try {
-                                        keygen = KeyPairGenerator.getInstance("RSA");
-                                        keygen.initialize(4096);
-                                        KeyPair kp = keygen.generateKeyPair();
-
-                                        publicKey = kp.getPublic();
-                                        privateKey = kp.getPrivate();
-
-                                        db = dbHelper.getWritableDatabase();
-                                        ContentValues values = new ContentValues();
-                                        values.put(DatabaseContract.ClientEntry.COLUMN_NAME_NAME, clientNumberField.getText().toString());
-                                        values.put(DatabaseContract.ClientEntry.COLUMN_NAME_PUBLICKKEY, bytesToHex(publicKey.getEncoded()));
-                                        values.put(DatabaseContract.ClientEntry.COLUMN_NAME_PRIVATEKEY, bytesToHex(privateKey.getEncoded()));
-                                        db.insert(DatabaseContract.ClientEntry.TABLE_NAME, null, values);
-                                    } catch (NoSuchAlgorithmException e) {
-                                        popupMsg = ERROR_MSG;
-                                    }
+                                    popupMsg = "Se han realizado más de 3 peticiones en las últimas 4 horas. Por favor, espere e inténtelo de nuevo más tarde.";
                                 }
-                                if (publicKey != null && privateKey != null) {
-                                    try {
-                                        Signature signature = Signature.getInstance("SHA512withRSA");
-                                        signature.initSign(privateKey);
-                                        String msg = bedsNumber + " " +
-                                                tablesNumber + " " +
-                                                chairsNumber + " " +
-                                                armchairsNumber + " " +
-                                                clientNumberField.getText().toString();
-                                        signature.update(msg.getBytes());
-                                        byte[] sign = signature.sign();
-
-                                        String data = msg + ";" + bytesToHex(publicKey.getEncoded()) + ";" + bytesToHex(sign);
-                                        popupMsg = sendRequest(data);
-                                    } catch (NoSuchAlgorithmException | InvalidKeyException | SignatureException | IOException e) {
-                                        popupMsg = ERROR_MSG;
-                                    }
-                                }
+                                db.close();
+                                dbHelper.close();
                                 Toast.makeText(MainActivity.this, popupMsg, Toast.LENGTH_SHORT).show();
                             }
                     )
@@ -196,8 +214,17 @@ public class MainActivity extends AppCompatActivity {
         SSLSocket socket = null;
         PrintWriter out = null;
         String response = "";
-
         if (sslContext != null) {
+            DatabaseContract.ClientDbHelper dbHelper = new DatabaseContract.ClientDbHelper(getApplicationContext());
+            SQLiteDatabase db = dbHelper.getWritableDatabase();
+            ContentValues values = new ContentValues();
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+            String currentDatetime = sdf.format(new Timestamp(System.currentTimeMillis()));
+            values.put(DatabaseContract.ClientEntry.COLUMN_NAME_DATETIME, currentDatetime);
+            db.insert(DatabaseContract.ClientEntry.TABLE2_NAME, null, values);
+            db.close();
+            dbHelper.close();
+
             try {
                 SSLSocketFactory factory = sslContext.getSocketFactory();
                 socket = (SSLSocket) factory.createSocket(server, port);

@@ -12,20 +12,30 @@ public final class DatabaseContract {
 
     public static class ClientEntry implements BaseColumns {
         public static final String TABLE_NAME = "clients";
+        public static final String TABLE2_NAME = "requests";
+        public static final String COLUMN_NAME_DATETIME = "datetime";
         public static final String COLUMN_NAME_NAME = "name";
         public static final String COLUMN_NAME_PUBLICKKEY = "public_key";
         public static final String COLUMN_NAME_PRIVATEKEY = "private_key";
     }
 
-    private static final String SQL_CREATE_ENTRIES =
+    private static final String SQL_CREATE_CLIENTS_ENTRIES =
             "CREATE TABLE " + ClientEntry.TABLE_NAME + " (" +
                     BaseColumns._ID + " INTEGER PRIMARY KEY," +
                     ClientEntry.COLUMN_NAME_NAME + " TEXT," +
                     ClientEntry.COLUMN_NAME_PUBLICKKEY + " TEXT," +
                     ClientEntry.COLUMN_NAME_PRIVATEKEY + " TEXT)";
 
-    private static final String SQL_DELETE_ENTRIES =
+    private static final String SQL_CREATE_REQUESTS_ENTRIES =
+            "CREATE TABLE " + ClientEntry.TABLE2_NAME + " (" +
+                    BaseColumns._ID + " INTEGER PRIMARY KEY," +
+                    ClientEntry.COLUMN_NAME_DATETIME + " TEXT)";
+
+    private static final String SQL_DELETE_CLIENTS_ENTRIES =
             "DROP TABLE IF EXISTS " + ClientEntry.TABLE_NAME;
+
+    private static final String SQL_DELETE_REQUESTS_ENTRIES =
+            "DROP TABLE IF EXISTS " + ClientEntry.TABLE2_NAME;
 
     public static class ClientDbHelper extends SQLiteOpenHelper {
         public static final int DATABASE_VERSION = 1;
@@ -36,11 +46,13 @@ public final class DatabaseContract {
         }
 
         public void onCreate(SQLiteDatabase db) {
-            db.execSQL(SQL_CREATE_ENTRIES);
+            db.execSQL(SQL_CREATE_CLIENTS_ENTRIES);
+            db.execSQL(SQL_CREATE_REQUESTS_ENTRIES);
         }
 
         public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
-            db.execSQL(SQL_DELETE_ENTRIES);
+            db.execSQL(SQL_DELETE_CLIENTS_ENTRIES);
+            db.execSQL(SQL_DELETE_REQUESTS_ENTRIES);
             onCreate(db);
         }
 
