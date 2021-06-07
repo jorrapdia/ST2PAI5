@@ -46,8 +46,7 @@ import androidx.appcompat.app.AppCompatActivity;
 public class MainActivity extends AppCompatActivity {
 
     // Setup Server information
-    protected static String server = "192.168.100.5";
-    protected static int port = 8443;
+    protected Config config;
     private static final String[] PROTOCOLS = new String[]{"TLSv1.3"};
     private static final String[] CIPHER_SUITES = new String[]{"TLS_AES_128_GCM_SHA256"};
     private static final char[] HEX_ARRAY = "0123456789ABCDEF".toCharArray();
@@ -56,17 +55,12 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        this.config = Config.getInstance(getApplicationContext().getAssets());
 
         StrictMode.ThreadPolicy policy = new StrictMode.ThreadPolicy.Builder().permitAll().build();
         StrictMode.setThreadPolicy(policy);
 
         setContentView(R.layout.activity_main);
-
-        DatabaseContract.ClientDbHelper dbHelper = new DatabaseContract.ClientDbHelper(getApplicationContext());
-        SQLiteDatabase db = dbHelper.getReadableDatabase();
-        dbHelper.onUpgrade(db, 0, 1);
-        dbHelper.close();
-        db.close();
 
         // Capturamos el boton de Enviar
         View button = findViewById(R.id.button_send);
@@ -110,7 +104,7 @@ public class MainActivity extends AppCompatActivity {
                                 Cursor dSC = db.rawQuery(dateSelectionQry, null);
                                 int madeRequests = dSC.getCount();
                                 dSC.close();
-                                if (madeRequests < 3) {
+                                if (config.isTest() || madeRequests < 3) {
                                     String selection = DatabaseContract.ClientEntry.COLUMN_NAME_NAME + " = ?";
                                     String[] selectionArgs = {clientNumberField.getText().toString()};
                                     Cursor cursor = db.query(
@@ -227,7 +221,7 @@ public class MainActivity extends AppCompatActivity {
 
             try {
                 SSLSocketFactory factory = sslContext.getSocketFactory();
-                socket = (SSLSocket) factory.createSocket(server, port);
+                socket = (SSLSocket) factory.createSocket(config.getServer(), config.getPort());
                 socket.setEnabledProtocols(PROTOCOLS);
                 socket.setEnabledCipherSuites(CIPHER_SUITES);
 
